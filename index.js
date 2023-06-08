@@ -27,6 +27,27 @@ async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
+
+        // Collection'ss
+        const userCollection = client.db("the-music-mystery").collection("users")
+
+
+        // user's related api's
+        app.post('/users', async(req, res)=>{
+            const user = req.body;
+            const result = await userCollection.insertOne(user);
+            res.send(result)
+        })
+
+        // connecting api's
+        app.get('/', (req, res) => {
+            res.send('Hello World!')
+        })
+        
+        app.listen(port, () => {
+            console.log(`Example app listening on port ${port}`)
+        })
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -36,13 +57,3 @@ async function run() {
     }
 }
 run().catch(console.dir);
-
-
-
-app.get('/', (req, res) => {
-    res.send('Hello World!')
-})
-
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
