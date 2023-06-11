@@ -13,9 +13,9 @@ app.use(express.json());
 // jwt middleware
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
-    console.log(authorization);
+    // console.log(authorization);
     if (!authorization) {
-        return res.status(401).send({ error: true, message: 'unauthorized access' });
+        return res.status(401).send({ error: true, message: 'no authorization found' });
     }
 
     // bearer token
@@ -26,7 +26,7 @@ const verifyJWT = (req, res, next) => {
             return res.status(403).send({ error: true, message: 'unauthorized access' })
         }
         req.decode = decode;
-        console.log('29 no line', decode);
+        // console.log('29 no line', decode);
         next();
     })
 }
@@ -52,6 +52,8 @@ async function run() {
 
         // Collection'ss
         const userCollection = client.db("the-music-mystery").collection("users")
+        const reviewsCollection = client.db("the-music-mystery").collection("reviews");
+        const classCollection = client.db("the-music-mystery").collection("musicianClasses");
 
         // create JWT token
         app.post('/jwt', (req, res) => {
@@ -66,7 +68,7 @@ async function run() {
 
         const verifyAdmin = async (req, res, next) => {
             const email = req.decode.email;
-            console.log(email);
+            // console.log(email);
             const query = { email: email }
             const user = await userCollection.findOne(query);
             if (user?.role !== 'admin') {
@@ -75,18 +77,18 @@ async function run() {
             next()
         }
 
-        // verifyMusician middleware
-
-        // const verifyMusician = async(req, res, next)=>{
-        //     const email = req.decode.email;
-        //     console.log(email);
-        //     const query = {email: email}
-        //     const user  = await userCollection.findOne(query);
-        //     if(user?.role !== 'musician'){
-        //         return res.status(403).send({error: true, message: 'forbidden message'})
-        //     }
-        //     next()
-        // }
+        // verifyAdmin middleware
+        const verifyMusician = async (req, res, next) => {
+            const email = req.decode.email;
+            // console.log(email);
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            console.log("user from 86no line",user);
+            if (user?.role !== 'musician') {
+                return res.status(403).send({ error: true, message: 'forbidden message' })
+            }
+            next()
+        }
 
 
 
@@ -116,15 +118,11 @@ async function run() {
 
         // get Musician user from allUsers
         app.get('/allUsers/musician/:email', verifyJWT, async (req, res) => {
-            
-            
             const email = req.params.email;
             console.log(email);
             const query = { email: email }
             const user = await userCollection.findOne(query);
-            // if (user?.role !== 'musician') {
-            //     return res.send({ musician: false })
-            // }
+            console.log(user);
             const result = { musician: user?.role === 'musician' }
             res.send(result)
         })
@@ -155,6 +153,49 @@ async function run() {
             res.send(result);
         })
 
+        //---------- Musician's related api's ----------- //
+
+        // get all classes from database collection
+        app.get('/musicianClasses', verifyJWT, verifyMusician, async (req, res) => {
+            const result = await classCollection.find().toArray();
+            res.send(result)
+        })
+
+        //  New class save api in db
+        app.post('/addClasses', async (req, res) => {
+            const newClass = req.body;
+            console.log("new class form 153no line", newClass);
+            const result = await classCollection.insertOne(newClass);
+            res.send(result);
+        })
+
+        // Update musician added class
+        app.get('/musicianClasses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await classCollection.findOne(query)
+            res.send(result)
+        })
+        
+        // Update specific class details
+        app.put('/updateClass/:id', async (req, res) => {
+            const id = req.params.id;
+            const body = req.body;
+            const filter = { _id: new ObjectId(id) }
+
+            const updateData = {
+                $set: {
+                    Price: body.Price,
+                    Seats: body.Seats,
+                    className: body.className,
+                    photo: body.photo,
+                }
+            }
+            const result = await classCollection.updateOne(filter, updateData);
+            res.send(result)
+        })
+
+
         // make Musician user
         app.patch('/allUsers/musician/:id', async (req, res) => {
             const id = req.params;
@@ -169,11 +210,19 @@ async function run() {
             res.send(result);
         })
 
+        // 
+
         // Delete user
         app.delete('/allUsers/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await userCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        // read reviews data from Bistro-Db
+        app.get('/reviews', async (req, res) => {
+            const result = await reviewsCollection.find().toArray()
             res.send(result)
         })
 
