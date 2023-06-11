@@ -161,6 +161,12 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/myClasses/:email', async (req, res) => {
+            console.log(req.params.email);
+            const result = await classCollection.find({ email: req.params.email }).toArray()
+            res.send(result)
+        })
+
         //  New class save api in db
         app.post('/addClasses', async (req, res) => {
             const newClass = req.body;
