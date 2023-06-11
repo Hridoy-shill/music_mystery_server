@@ -10,6 +10,27 @@ const port = process.env.PORT || 5000
 app.use(cors());
 app.use(express.json());
 
+// jwt middleware
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    console.log(authorization);
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'unauthorized access' });
+    }
+
+    // bearer token
+    const token = authorization.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decode) => {
+        if (error) {
+            return res.status(403).send({ error: true, message: 'unauthorized access' })
+        }
+        req.decode = decode;
+        console.log('29 no line', decode);
+        next();
+    })
+}
+
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -35,17 +56,76 @@ async function run() {
         // create JWT token
         app.post('/jwt', (req, res) => {
             const user = req.body;
-            const token = jwt.sign(user, env.process.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-
+            // console.log('user', user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5h' })
+            // console.log(token);
             res.send({ token })
         })
 
+        // verifyAdmin middleware
 
-        // user's related api's
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decode.email;
+            console.log(email);
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden message' })
+            }
+            next()
+        }
+
+        // verifyMusician middleware
+
+        // const verifyMusician = async(req, res, next)=>{
+        //     const email = req.decode.email;
+        //     console.log(email);
+        //     const query = {email: email}
+        //     const user  = await userCollection.findOne(query);
+        //     if(user?.role !== 'musician'){
+        //         return res.status(403).send({error: true, message: 'forbidden message'})
+        //     }
+        //     next()
+        // }
+
+
+
+        //---------- user's related api's ----------- //
+
+
 
         // get all existing user's from database
-        app.get('/allUsers', async (req, res) => {
+        app.get('/allUsers', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await userCollection.find().toArray();
+            res.send(result)
+        })
+
+        // get admin user from allUsers
+        app.get('/allUsers/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decode.email !== email) {
+                return res.send({ admin: false })
+            }
+
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' }
+            res.send(result)
+        })
+
+        // get Musician user from allUsers
+        app.get('/allUsers/musician/:email', verifyJWT, async (req, res) => {
+            
+            
+            const email = req.params.email;
+            console.log(email);
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            // if (user?.role !== 'musician') {
+            //     return res.send({ musician: false })
+            // }
+            const result = { musician: user?.role === 'musician' }
             res.send(result)
         })
 
@@ -87,6 +167,14 @@ async function run() {
 
             const result = await userCollection.updateOne(filter, updateDoc);
             res.send(result);
+        })
+
+        // Delete user
+        app.delete('/allUsers/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await userCollection.deleteOne(query)
+            res.send(result)
         })
 
         // connecting api's
