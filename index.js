@@ -83,7 +83,7 @@ async function run() {
             // console.log(email);
             const query = { email: email }
             const user = await userCollection.findOne(query);
-            console.log("user from 86no line",user);
+            console.log("user from 86no line", user);
             if (user?.role !== 'musician') {
                 return res.status(403).send({ error: true, message: 'forbidden message' })
             }
@@ -116,16 +116,6 @@ async function run() {
             res.send(result)
         })
 
-        // get Musician user from allUsers
-        app.get('/allUsers/musician/:email', verifyJWT, async (req, res) => {
-            const email = req.params.email;
-            console.log(email);
-            const query = { email: email }
-            const user = await userCollection.findOne(query);
-            console.log(user);
-            const result = { musician: user?.role === 'musician' }
-            res.send(result)
-        })
 
         // post newUser in database
         app.post('/users', async (req, res) => {
@@ -153,7 +143,69 @@ async function run() {
             res.send(result);
         })
 
+        // update feedback
+        app.patch('/feedback', async (req, res) => {
+            const id = req.params;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                },
+            };
+
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        // Approved class
+        app.patch('/allClasses/Approved/:id', async (req, res) => {
+            const id = req.params;
+            // console.log("log from 149No line",id);
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: 'approved'
+                },
+            };
+
+            const result = await classCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        // Denied class
+        app.patch('/allClasses/Denied/:id', async (req, res) => {
+            const id = req.params;
+            console.log("log from 164No line", id);
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: 'denied'
+                },
+            };
+
+            const result = await classCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
         //---------- Musician's related api's ----------- //
+
+        // get Musician user from allUsers
+        app.get('/allUsers/musician/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            console.log("lineNo 181", email);
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            console.log("lineNo 184", user);
+            const result = { musician: user?.role === 'musician' }
+            res.send(result)
+        })
+
+        // get Musician users from allUsers on musician page
+        app.get('/musicians', async (req, res) => {
+            const query = { role: "musician" }
+            const result = await userCollection.find(query).toArray();
+            res.send(result)
+        })
 
         // get all classes from database collection
         app.get('/musicianClasses', verifyJWT, verifyMusician, async (req, res) => {
@@ -161,9 +213,17 @@ async function run() {
             res.send(result)
         })
 
+        // get specific musician classes
         app.get('/myClasses/:email', async (req, res) => {
-            console.log(req.params.email);
+            console.log("lineNo 204", req.params.email);
             const result = await classCollection.find({ email: req.params.email }).toArray()
+            res.send(result)
+        })
+
+        // get musicians from allUsers
+        app.get('/myClasses/:role', async (req, res) => {
+            console.log("lineNo 211", req.params.role);
+            const result = await userCollection.find({ role: req.params.email }).toArray()
             res.send(result)
         })
 
@@ -175,6 +235,12 @@ async function run() {
             res.send(result);
         })
 
+        // get all classes from database
+        app.get('/allClasses', async (req, res) => {
+            const result = await classCollection.find().toArray();
+            res.send(result)
+        })
+
         // Update musician added class
         app.get('/musicianClasses/:id', async (req, res) => {
             const id = req.params.id;
@@ -182,7 +248,7 @@ async function run() {
             const result = await classCollection.findOne(query)
             res.send(result)
         })
-        
+
         // Update specific class details
         app.put('/updateClass/:id', async (req, res) => {
             const id = req.params.id;
@@ -201,6 +267,28 @@ async function run() {
             res.send(result)
         })
 
+        // get feedback
+        app.get('/feedBook/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await classCollection.findOne(query)
+            res.send(result)
+        })
+
+        // Update feedback specific class details
+        app.put('/admin/feedback/:id', async (req, res) => {
+            const id = req.params.id;
+            const body = req.body;
+            const filter = { _id: new ObjectId(id) }
+
+            const updateData = {
+                $set: {
+                    feedback: body.feedback
+                }
+            }
+            const result = await classCollection.updateOne(filter, updateData);
+            res.send(result)
+        })
 
         // make Musician user
         app.patch('/allUsers/musician/:id', async (req, res) => {
@@ -215,8 +303,6 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
-
-        // 
 
         // Delete user
         app.delete('/allUsers/:id', async (req, res) => {
