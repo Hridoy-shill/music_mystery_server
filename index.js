@@ -54,6 +54,7 @@ async function run() {
         const userCollection = client.db("the-music-mystery").collection("users")
         const reviewsCollection = client.db("the-music-mystery").collection("reviews");
         const classCollection = client.db("the-music-mystery").collection("musicianClasses");
+        const selectedClassesCollection = client.db("the-music-mystery").collection("selectedClasses");
 
         // create JWT token
         app.post('/jwt', (req, res) => {
@@ -315,6 +316,29 @@ async function run() {
         // read reviews data from Bistro-Db
         app.get('/reviews', async (req, res) => {
             const result = await reviewsCollection.find().toArray()
+            res.send(result)
+        })
+
+        // selected classes api
+
+        // get selected classes
+        app.get('/selectedAllClasses', async (req, res) => {
+            const result = await selectedClassesCollection.find().toArray();
+            res.send(result);
+        })
+
+        // post selected classes
+        app.post('/selectedClasses', async (req, res) => {
+            const user = req.body;
+            const result = await selectedClassesCollection.insertOne(user);
+            res.send(result)
+        })
+
+        // delete selected classes 
+        app.delete('/selectedClass/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await selectedClassesCollection.deleteOne(query)
             res.send(result)
         })
 
