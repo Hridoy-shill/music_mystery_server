@@ -56,6 +56,7 @@ async function run() {
         const reviewsCollection = client.db("the-music-mystery").collection("reviews");
         const classCollection = client.db("the-music-mystery").collection("musicianClasses");
         const selectedClassesCollection = client.db("the-music-mystery").collection("selectedClasses");
+        const paymentCollection = client.db("the-music-mystery").collection("allPayments");
 
         // create JWT token
         app.post('/jwt', (req, res) => {
@@ -322,25 +323,7 @@ async function run() {
             res.send(result)
         })
 
-        // Payment related api's------------
-
-        //create payment intent
-        app.post('/create-payment-intent', async (req, res) => {
-            const {Price} = req.body;
-            console.log('330 lineNO', req.body);
-          
-            const amount = parseInt(Price*100);
-
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
-            })
-
-            res.send({
-                clientSecret: paymentIntent.client_secret
-            })
-        })
+        
 
 
         // read reviews data from Bistro-Db
@@ -375,6 +358,39 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await selectedClassesCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        // Payment related api's------------
+
+        //create payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const {Price} = req.body;
+            console.log('330 lineNO', req.body);
+          
+            const amount = parseInt(Price*100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+        // save payment in database
+        app.post('/allPayments', async(req, res)=>{
+            const paymentData = req.body;
+            const result = await paymentCollection.insertOne(paymentData);
+            res.send(result) 
+        })
+
+        // get all paid classes
+        app.get('/allPaidClasses', async(req, res)=>{
+            const result = await paymentCollection.find().toArray();
             res.send(result)
         })
 
