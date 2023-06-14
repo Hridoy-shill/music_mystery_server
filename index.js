@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors');
 require('dotenv').config()
+const stripe = require('stripe')(process.env.PAYMENT_GATEWAY_KEY)
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
 
@@ -268,6 +269,14 @@ async function run() {
             res.send(result)
         })
 
+        // get specific single Class data by id
+        app.get('/singleClassData/:id', async(req, res)=>{
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)}
+            const result = await selectedClassesCollection.findOne(filter)
+            res.send(result);
+        })
+
         // get feedback
         app.get('/feedBook/:id', async (req, res) => {
             const id = req.params.id;
@@ -313,6 +322,27 @@ async function run() {
             res.send(result)
         })
 
+        // Payment related api's------------
+
+        //create payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const {Price} = req.body;
+            console.log('330 lineNO', req.body);
+          
+            const amount = parseInt(Price*100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+
         // read reviews data from Bistro-Db
         app.get('/reviews', async (req, res) => {
             const result = await reviewsCollection.find().toArray()
@@ -321,26 +351,20 @@ async function run() {
 
         // selected classes api---------------------
 
-        // app.get('/myClasses/:email', async (req, res) => {
-        //     console.log("lineNo 204", req.params.email);
-        //     const result = await classCollection.find({ email: req.params.email }).toArray()
-        //     res.send(result)
-        // })
-
         // get selected classes
         app.get('/selectedAllClasses', async (req, res) => {
             const email = req.query.email;
-            if(!email){
+            if (!email) {
                 res.send([]);
             }
-            const query = {userEmail: email};
+            const query = { userEmail: email };
             const result = await selectedClassesCollection.find(query).toArray();
             res.send(result)
         })
 
         // post selected classes
         app.post('/selectedClasses', async (req, res) => {
-            const selectedClass =  req.body;
+            const selectedClass = req.body;
             console.log(selectedClass);
             const result = await selectedClassesCollection.insertOne(selectedClass);
             res.send(result)
@@ -353,6 +377,8 @@ async function run() {
             const result = await selectedClassesCollection.deleteOne(query)
             res.send(result)
         })
+
+
 
         // connecting api's
         app.get('/', (req, res) => {
