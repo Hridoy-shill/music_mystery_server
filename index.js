@@ -319,18 +319,30 @@ async function run() {
             res.send(result)
         })
 
-        // selected classes api
+        // selected classes api---------------------
+
+        // app.get('/myClasses/:email', async (req, res) => {
+        //     console.log("lineNo 204", req.params.email);
+        //     const result = await classCollection.find({ email: req.params.email }).toArray()
+        //     res.send(result)
+        // })
 
         // get selected classes
         app.get('/selectedAllClasses', async (req, res) => {
-            const result = await selectedClassesCollection.find().toArray();
-            res.send(result);
+            const email = req.query.email;
+            if(!email){
+                res.send([]);
+            }
+            const query = {userEmail: email};
+            const result = await selectedClassesCollection.find(query).toArray();
+            res.send(result)
         })
 
         // post selected classes
         app.post('/selectedClasses', async (req, res) => {
-            const user = req.body;
-            const result = await selectedClassesCollection.insertOne(user);
+            const selectedClass =  req.body;
+            console.log(selectedClass);
+            const result = await selectedClassesCollection.insertOne(selectedClass);
             res.send(result)
         })
 
