@@ -219,7 +219,7 @@ async function run() {
         // get specific musician classes
         app.get('/myClasses/:email', async (req, res) => {
             console.log("lineNo 204", req.params.email);
-            const result = await classCollection.find({ email: req.params.email }).toArray()
+            const result = await classCollection.find({ instructorEmail: req.params.email }).toArray()
             res.send(result)
         })
 
