@@ -383,7 +383,7 @@ async function run() {
 
         // save payment in database
         app.post('/allPayments', async(req, res)=>{
-            const paymentData = req.body;
+            const paymentData = req.body.payment;
             const result = await paymentCollection.insertOne(paymentData);
             res.send(result) 
         })
@@ -391,6 +391,14 @@ async function run() {
         // get all paid classes
         app.get('/allPaidClasses', async(req, res)=>{
             const result = await paymentCollection.find().toArray();
+            res.send(result)
+        })
+
+        // get my enrolled classes
+        app.get('/myEnrolledClasses/:email',async(req, res)=>{
+            const email = req.params.email;
+            const filter = {studentEmail: email};
+            const result = await paymentCollection.find(filter).toArray();
             res.send(result)
         })
 
