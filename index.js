@@ -147,7 +147,7 @@ async function run() {
         })
 
         // update feedback
-        app.patch('/feedback', async (req, res) => {
+        app.patch('/feedback/:id', async (req, res) => {
             const id = req.params;
             const filter = { _id: new ObjectId(id) }
             const updateDoc = {
@@ -399,7 +399,7 @@ async function run() {
         app.post('/allPayments', async (req, res) => {
             const paymentData = req.body.payment;
             const result = await paymentCollection.insertOne(paymentData);
-            // const query = { _id: new ObjectId(paymentData.classId), Seats: { $gt: 0 } }
+            // const query = { _id: new ObjectId(paymentData.classId)}
             // const classUpdateResult = await classCollection.updateOne(query, {
             //     $inc: {
             //         Seats: -1
