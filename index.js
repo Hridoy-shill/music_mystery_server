@@ -14,7 +14,6 @@ app.use(express.json());
 // jwt middleware
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
-    // console.log(authorization);
     if (!authorization) {
         return res.status(401).send({ error: true, message: 'no authorization found' });
     }
@@ -27,7 +26,6 @@ const verifyJWT = (req, res, next) => {
             return res.status(403).send({ error: true, message: 'unauthorized access' })
         }
         req.decode = decode;
-        // console.log('29 no line', decode);
         next();
     })
 }
@@ -61,9 +59,7 @@ async function run() {
         // create JWT token
         app.post('/jwt', (req, res) => {
             const user = req.body;
-            // console.log('user', user);
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5h' })
-            // console.log(token);
             res.send({ token })
         })
 
@@ -71,7 +67,6 @@ async function run() {
 
         const verifyAdmin = async (req, res, next) => {
             const email = req.decode.email;
-            // console.log(email);
             const query = { email: email }
             const user = await userCollection.findOne(query);
             if (user?.role !== 'admin') {
@@ -83,10 +78,8 @@ async function run() {
         // verifyAdmin middleware
         const verifyMusician = async (req, res, next) => {
             const email = req.decode.email;
-            // console.log(email);
             const query = { email: email }
             const user = await userCollection.findOne(query);
-            console.log("user from 86no line", user);
             if (user?.role !== 'musician') {
                 return res.status(403).send({ error: true, message: 'forbidden message' })
             }
@@ -163,7 +156,6 @@ async function run() {
         // Approved class
         app.patch('/allClasses/Approved/:id', async (req, res) => {
             const id = req.params;
-            // console.log("log from 149No line",id);
             const filter = { _id: new ObjectId(id) }
             const updateDoc = {
                 $set: {
@@ -178,7 +170,6 @@ async function run() {
         // Denied class
         app.patch('/allClasses/Denied/:id', async (req, res) => {
             const id = req.params;
-            console.log("log from 164No line", id);
             const filter = { _id: new ObjectId(id) }
             const updateDoc = {
                 $set: {
@@ -195,10 +186,8 @@ async function run() {
         // get Musician user from allUsers
         app.get('/allUsers/musician/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            console.log("lineNo 181", email);
             const query = { email: email }
             const user = await userCollection.findOne(query);
-            console.log("lineNo 184", user);
             const result = { musician: user?.role === 'musician' }
             res.send(result)
         })
@@ -215,7 +204,7 @@ async function run() {
             const query = { role: "musician" }
             const result = (await userCollection.find(query).toArray()).slice(0, 6);
             res.send(result)
-        }) 
+        })
 
         // get popular classes
         app.get('/popularClasses', async (req, res) => {
@@ -231,14 +220,12 @@ async function run() {
 
         // get specific musician classes
         app.get('/myClasses/:email', async (req, res) => {
-            console.log("lineNo 204", req.params.email);
             const result = await classCollection.find({ instructorEmail: req.params.email }).toArray()
             res.send(result)
         })
 
         // get musicians from allUsers
         app.get('/myClasses/:role', async (req, res) => {
-            console.log("lineNo 211", req.params.role);
             const result = await userCollection.find({ role: req.params.email }).toArray()
             res.send(result)
         })
@@ -246,7 +233,6 @@ async function run() {
         //  New class save api in db
         app.post('/addClasses', async (req, res) => {
             const newClass = req.body;
-            console.log("new class form 153no line", newClass);
             const result = await classCollection.insertOne(newClass);
             res.send(result);
         })
@@ -361,7 +347,6 @@ async function run() {
         // post selected classes
         app.post('/selectedClasses', async (req, res) => {
             const selectedClass = req.body;
-            console.log(selectedClass);
             const result = await selectedClassesCollection.insertOne(selectedClass);
             res.send(result)
         })
@@ -380,7 +365,6 @@ async function run() {
         // create payment intent
         app.post('/create-payment-intent', async (req, res) => {
             const { Price } = req.body;
-            console.log('330 lineNO', req.body);
 
             const amount = parseInt(Price * 100);
 
@@ -399,13 +383,26 @@ async function run() {
         app.post('/allPayments', async (req, res) => {
             const paymentData = req.body.payment;
             const result = await paymentCollection.insertOne(paymentData);
-            // const query = { _id: new ObjectId(paymentData.classId)}
+            
+            res.send(result)
+        })
+
+        // const query = { _id: new ObjectId(paymentData.classId)}
             // const classUpdateResult = await classCollection.updateOne(query, {
             //     $inc: {
             //         Seats: -1
             //     }
             // })
-            res.send(result)
+            
+        app.patch('/updateSeat/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id)}
+            const classUpdateResult = await classCollection.updateOne(query, {
+                $inc: {
+                    Seats: -1
+                }
+            })
+            res.send(classUpdateResult);
         })
 
         // get all paid classes
