@@ -49,7 +49,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         // Collection'ss
         const userCollection = client.db("the-music-mystery").collection("users")
@@ -210,6 +210,19 @@ async function run() {
             res.send(result)
         })
 
+        // get Musician users from allUsers on musician page
+        app.get('/popularMusicians', async (req, res) => {
+            const query = { role: "musician" }
+            const result = (await userCollection.find(query).toArray()).slice(0, 6);
+            res.send(result)
+        })
+
+        // get popular classes
+        app.get('/popularClasses', async (req, res) => {
+            const result = ((await classCollection.find().toArray()).slice(0, 6));
+            res.send(result)
+        })
+
         // get all classes from database collection
         app.get('/musicianClasses', verifyJWT, verifyMusician, async (req, res) => {
             const result = await classCollection.find().toArray();
@@ -271,9 +284,9 @@ async function run() {
         })
 
         // get specific single Class data by id
-        app.get('/singleClassData/:id', async(req, res)=>{
+        app.get('/singleClassData/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = {_id: new ObjectId(id)}
+            const filter = { _id: new ObjectId(id) }
             const result = await selectedClassesCollection.findOne(filter)
             res.send(result);
         })
@@ -323,7 +336,7 @@ async function run() {
             res.send(result)
         })
 
-        
+
 
 
         // read reviews data from Bistro-Db
@@ -353,6 +366,7 @@ async function run() {
             res.send(result)
         })
 
+
         // delete selected classes 
         app.delete('/selectedClass/:id', async (req, res) => {
             const id = req.params.id;
@@ -363,12 +377,12 @@ async function run() {
 
         // Payment related api's------------
 
-        //create payment intent
+        // create payment intent
         app.post('/create-payment-intent', async (req, res) => {
-            const {Price} = req.body;
+            const { Price } = req.body;
             console.log('330 lineNO', req.body);
-          
-            const amount = parseInt(Price*100);
+
+            const amount = parseInt(Price * 100);
 
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
@@ -382,26 +396,31 @@ async function run() {
         })
 
         // save payment in database
-        app.post('/allPayments', async(req, res)=>{
+        app.post('/allPayments', async (req, res) => {
             const paymentData = req.body.payment;
             const result = await paymentCollection.insertOne(paymentData);
-            res.send(result) 
+            // const query = { _id: new ObjectId(paymentData.classId), Seats: { $gt: 0 } }
+            // const classUpdateResult = await classCollection.updateOne(query, {
+            //     $inc: {
+            //         Seats: -1
+            //     }
+            // })
+            res.send(result)
         })
 
         // get all paid classes
-        app.get('/allPaidClasses', async(req, res)=>{
+        app.get('/allPaidClasses', async (req, res) => {
             const result = await paymentCollection.find().toArray();
             res.send(result)
         })
 
         // get my enrolled classes
-        app.get('/myEnrolledClasses/:email',async(req, res)=>{
+        app.get('/myEnrolledClasses/:email', async (req, res) => {
             const email = req.params.email;
-            const filter = {studentEmail: email};
+            const filter = { studentEmail: email };
             const result = await paymentCollection.find(filter).toArray();
             res.send(result)
         })
-
 
 
         // connecting api's
