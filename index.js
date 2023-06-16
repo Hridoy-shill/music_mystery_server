@@ -215,7 +215,7 @@ async function run() {
             const query = { role: "musician" }
             const result = (await userCollection.find(query).toArray()).slice(0, 6);
             res.send(result)
-        })
+        }) 
 
         // get popular classes
         app.get('/popularClasses', async (req, res) => {
