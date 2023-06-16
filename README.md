@@ -5,9 +5,9 @@
 
 ## About Webpage
 
-- It a Toy car based website backend server.
+- It a Course selling based website backend server.
 - There have all backend routes in this website
-- In this serversite admin's can add data by client side.
+- In this serverSide Musician's can add data by client side.
 - also admin can get the toy's with the api.
-- In this serversite admin can update and delete his/her added data's.
+- In this serverSide admin can update and delete users role.
 
