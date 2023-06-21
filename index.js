@@ -403,7 +403,7 @@ async function run() {
                 }
             })
             res.send(classUpdateResult);
-        })
+        }) 
 
         // get all paid classes
         app.get('/allPaidClasses', async (req, res) => {
